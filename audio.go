@@ -17,9 +17,10 @@ const (
 type AudioResponseFormat string
 
 const (
-	AudioResponseFormatJSON AudioResponseFormat = "json"
-	AudioResponseFormatSRT  AudioResponseFormat = "srt"
-	AudioResponseFormatVTT  AudioResponseFormat = "vtt"
+	AudioResponseFormatJSON        AudioResponseFormat = "json"
+	AudioResponseFormatSRT         AudioResponseFormat = "srt"
+	AudioResponseFormatVTT         AudioResponseFormat = "vtt"
+	AudioResponseFormatVerboseJSON AudioResponseFormat = "verbose_json"
 )
 
 // AudioRequest represents a request structure for audio API.
@@ -33,8 +34,31 @@ type AudioRequest struct {
 	Format      AudioResponseFormat
 }
 
+// AudioSegment contains information about a part of the audio, segmented by the model.
+type AudioSegment struct {
+	ID               int     `json:"id"`
+	Seek             int     `json:"seek"`
+	Start            float32 `json:"start"`
+	End              float32 `json:"end"`
+	Text             string  `json:"text"`
+	Tokens           []int   `json:"tokens"`
+	Temperature      float32 `json:"temperature"`
+	AvgLogProb       float64 `json:"avg_logprob"`
+	CompressionRatio float64 `json:"compression_ratio"`
+	NoSpeechProb     float64 `json:"no_speech_prob"`
+	Transient        bool    `json:"transient"`
+}
+
+type AudioResponseVerboseJson struct {
+	Task     string         `json:"task"`
+	Language string         `json:"language"`
+	Duration float32        `json:"duration"`
+	Segments []AudioSegment `json:"segments"`
+}
+
 // AudioResponse represents a response structure for audio API.
 type AudioResponse struct {
+	AudioResponseVerboseJson
 	Text string `json:"text"`
 }
 
@@ -86,7 +110,9 @@ func (c *Client) callAudioAPI(
 
 // HasJSONResponse returns true if the response format is JSON.
 func (r AudioRequest) HasJSONResponse() bool {
-	return r.Format == "" || r.Format == AudioResponseFormatJSON
+	return r.Format == "" ||
+		r.Format == AudioResponseFormatJSON ||
+		r.Format == AudioResponseFormatVerboseJSON
 }
 
 // audioMultipartForm creates a form with audio file contents and the name of the model to use for
